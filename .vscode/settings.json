@@ -1,0 +1,63 @@
+{
+    "workbench.iconTheme": "flow-dim",
+    "files.autoSave": "afterDelay",
+    "prettier.tabWidth": 2,
+    "prettier.printWidth": 140,
+    "security.workspace.trust.banner": "never",
+    "security.workspace.trust.untrustedFiles": "open",
+    "workbench.colorTheme": "Dracula Theme",
+    "workbench.editor.empty.hint": "hidden",
+    "editor.accessibilityPageSize": 50,
+    "eslint.useFlatConfig": true, // Đây là "eslint.experimental.useFlatConfig" trong các phiên bản mới hơn, nhưng cả hai đều có thể hoạt động.
+
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.fixAll.eslint": "explicit" // Đảm bảo dòng này có và đúng
+    },
+    "editor.formatOnSave": true,
+    "files.eol": "\n",
+
+    // CÁC DÒNG QUAN TRỌNG ĐÃ SỬA:
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+
+    // Giữ nguyên các khối khác hoặc xóa nếu bạn không muốn tùy chỉnh
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "vscode.css-language-features"
+    },
+    "[scss]": {
+        "editor.defaultFormatter": "vscode.css-language-features"
+    },
+    "[handlebars]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+
+    "github.copilot.editor.enableAutoCompletions": true,
+    // Dòng này nằm ở cuối, nó sẽ là fallback formatter cho các file không được chỉ định ở trên.
+    // Nếu bạn muốn Prettier là mặc định cho MỌI THỨ, bạn có thể xóa các khối "[ngôn ngữ]" riêng lẻ ở trên,
+    // nhưng với setup hiện tại, hãy giữ nguyên.
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "github.copilot.enable": {
+        "*": false,
+        "plaintext": false,
+        "markdown": true,
+        "scminput": false
+    },
+    "typescript.updateImportsOnFileMove.enabled": "always"
+}

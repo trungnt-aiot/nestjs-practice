@@ -866,3 +866,22 @@ export class User {
   updatedAt: Date;
 }
 ```
+
+### AUTHENTICATION AND AUTHORIZATION
+
+- To implement authentication and authorization in NestJS, we can use `bcrypt` for password hashing and `jwt` for token-based authentication. First, install the required packages:
+
+```bash
+npm install bcrypt jsonwebtoken
+npm install -D @types/bcrypt @types/jsonwebtoken
+```
+
+- To protect routes and handle authentication, we install `passport` and `passport-jwt`:
+
+```bash
+npm install @nestjs/passport passport passport-jwt @nestjs/jwt
+```
+
+- Create a service for authentication, `auth.service.ts` file:
+
+```ts
