@@ -876,12 +876,78 @@ npm install bcrypt jsonwebtoken
 npm install -D @types/bcrypt @types/jsonwebtoken
 ```
 
+#### USE PASSPORT STRATEGY
 - To protect routes and handle authentication, we install `passport` and `passport-jwt`:
 
 ```bash
 npm install @nestjs/passport passport passport-jwt @nestjs/jwt
 ```
 
-- Create a service for authentication, `auth.service.ts` file:
+- Create a service for authentication, `jwt-auth.guard.ts` file:
 
 ```ts
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}
+```
+
+- To use jwt strategy, we config passport strategy, `jwt.strategy.ts` file:
+
+```ts
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import { PayloadAuthDto } from './dto/auth-payload.dto';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(private configService: ConfigService) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: configService.get<string>('ACCESS_TOKEN_SECRET'),
+    });
+  }
+
+  validate(payload: PayloadAuthDto) {
+    return payload;
+  }
+}
+```
+
+- To use pasport strategy, we have to inject it into `providers`, `app.module.ts` file:
+
+```ts
+import { Module } from '@nestjs/common';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { UserModule } from '../user/user.module';
+import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './jwt.strategy';
+
+@Module({
+  imports: [UserModule, JwtModule],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy],
+})
+export class AuthModule {}
+```
+
+- Use this guard to protect route in controller, use `@UseGuards(JwtAuthGuard)` decorator:
+
+```ts
+@UseGuards(JwtAuthGuard)
+@Get('secret')
+secret(@Req() request: Request & { user: PayloadAuthDto }) {
+  console.log(request.user);
+  const authHeaders: string = request.headers['authorization'] || '';
+  const token = authHeaders.split(' ')[1];
+  return token;
+}
+```
+
+#### USE TRADITIONAL GUARD
+

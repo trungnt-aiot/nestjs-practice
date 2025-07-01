@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { LoginAuthDto } from './dto/auth-login.dto';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../user/dto/user-create.dto';
@@ -29,17 +33,14 @@ export class AuthService {
       password,
       user.password,
     );
-
     if (!isValidPassword) {
       throw new BadRequestException("Password isn't correct");
     }
-
     const payload: PayloadAuthDto = {
       id: user.id,
       email: user.email,
       username: user.username,
     };
-
     const accessToken: string = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
       expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRE'),
@@ -50,5 +51,43 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  async verifyToken(token: string): Promise<PayloadAuthDto> {
+    try {
+      const decode: PayloadAuthDto = await this.jwtService.verify(token, {
+        secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+      });
+      return decode;
+    } catch {
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<string> {
+    try {
+      const payload: PayloadAuthDto = await this.jwtService.verify(
+        refreshToken,
+        {
+          secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
+        },
+      );
+
+      const newAccessToken: string = this.jwtService.sign(
+        {
+          id: payload.id,
+          email: payload.email,
+          username: payload.username,
+        },
+        {
+          secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+          expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRE'),
+        },
+      );
+
+      return newAccessToken;
+    } catch {
+      throw new UnauthorizedException('Invalid token, cannot renew');
+    }
   }
 }

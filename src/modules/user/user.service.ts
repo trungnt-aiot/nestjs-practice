@@ -52,6 +52,14 @@ export class UserService {
   }
 
   async createUser(userInfor: CreateUserDto): Promise<UserDto> {
+    const existUser: User | null = await this.userRepository.findOneBy({
+      email: userInfor.email,
+    });
+
+    if (existUser) {
+      throw new BadRequestException('This email has been used');
+    }
+
     const newUser: User = this.userRepository.create(userInfor);
     const password: string = newUser.password;
     const hashedPassword: string = await bcrypt.hash(password, 10);
