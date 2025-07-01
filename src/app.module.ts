@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { BullModule } from '@nestjs/bullmq';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { BullModule } from '@nestjs/bullmq';
     UserModule,
     NoteModule,
     AuthModule,
+    RedisModule,
   ],
   controllers: [],
   providers: [],

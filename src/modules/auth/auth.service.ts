@@ -1,6 +1,8 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { LoginAuthDto } from './dto/auth-login.dto';
@@ -13,6 +15,11 @@ import { AuthResponseDto } from './dto/auth-response.dto';
 import { PayloadAuthDto } from './dto/auth-payload.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { v4 as uuidv4 } from 'uuid';
+import Redis from 'ioredis';
+import { Repository } from 'typeorm';
+import { RefreshToken } from './refresh-token.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +27,9 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokenRepository: Repository<RefreshToken>,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
   async register(createUserDto: CreateUserDto): Promise<UserDto> {
     const newUser: UserDto = await this.userService.createUser(createUserDto);
@@ -40,6 +50,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       username: user.username,
+      tokenId: uuidv4(),
     };
     const accessToken: string = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
@@ -49,6 +60,12 @@ export class AuthService {
     const refreshToken: string = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
     });
+
+    const newRefreshToken = this.refreshTokenRepository.create({
+      token: refreshToken,
+    });
+
+    await this.refreshTokenRepository.save(newRefreshToken);
 
     return { accessToken, refreshToken };
   }
@@ -65,7 +82,15 @@ export class AuthService {
   }
 
   async refreshAccessToken(refreshToken: string): Promise<string> {
+    const refreshTokenDb = await this.refreshTokenRepository.findOne({
+      where: { token: refreshToken },
+    });
+
+    if (!refreshTokenDb) {
+      throw new BadRequestException('this refresh token has been remove');
+    }
     try {
+      console.log(refreshToken);
       const payload: PayloadAuthDto = await this.jwtService.verify(
         refreshToken,
         {
@@ -78,6 +103,7 @@ export class AuthService {
           id: payload.id,
           email: payload.email,
           username: payload.username,
+          tokenId: uuidv4(),
         },
         {
           secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
@@ -89,5 +115,31 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid token, cannot renew');
     }
+  }
+
+  async logoutAccout(
+    refreshToken: string,
+    accessToken: string,
+  ): Promise<{ message: string }> {
+    try {
+      await this.refreshTokenRepository.delete({
+        token: refreshToken,
+      });
+
+      await this.redis.set(accessToken, 'true', 'EX', 600);
+
+      return {
+        message: 'logout successfully',
+      };
+    } catch (err) {
+      console.log(err);
+      throw new InternalServerErrorException(
+        'Something error! cannot delete refresh token',
+      );
+    }
+  }
+
+  async isInBlackList(accessToken: string): Promise<boolean> {
+    return Boolean(await this.redis.get(accessToken));
   }
 }

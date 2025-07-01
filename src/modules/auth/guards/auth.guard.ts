@@ -21,9 +21,15 @@ export class JwtAuthGuard implements CanActivate {
     }
     const token: string = authHeader.split(' ')[1];
 
+    if (await this.authService.isInBlackList(token)) {
+      throw new ForbiddenException('This token is in black list');
+    }
+
     try {
       const decode = await this.authService.verifyToken(token);
       request.user = decode;
+      request.accessToken = token;
+      console.log(request.accessToken);
       return true;
     } catch (err) {
       console.error('Verify token failed:', err);

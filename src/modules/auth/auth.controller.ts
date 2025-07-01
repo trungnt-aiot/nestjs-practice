@@ -16,6 +16,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/auth.guard';
 import { NameAuthGuard } from './guards/name.guard';
 import { Response, Request } from 'express';
+import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -63,5 +64,22 @@ export class AuthController {
     }
 
     return this.authService.refreshAccessToken(refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Req() req: AuthenticatedRequest): Promise<{ message: string }> {
+    const refreshToken: string = req.cookies?.['refresh_token'];
+    const accessToken: string = req.accessToken;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Missing refresh token');
+    }
+
+    if (!accessToken) {
+      throw new UnauthorizedException('Missing access token');
+    }
+
+    return this.authService.logoutAccout(refreshToken, accessToken);
   }
 }
