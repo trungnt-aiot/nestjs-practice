@@ -68,7 +68,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Req() req: AuthenticatedRequest): Promise<{ message: string }> {
+  logout(@Req() req: AuthenticatedRequest): Promise<{ message: string }> {
     const refreshToken: string = req.cookies?.['refresh_token'];
     const accessToken: string = req.accessToken;
 
