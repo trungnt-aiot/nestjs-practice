@@ -17,11 +17,18 @@ import {
 import { JwtAuthGuard } from '../auth/guards/auth.guard';
 import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
 import { NoteUpdateDto } from './dto/note-update.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('note')
 export class NoteController {
   constructor(private readonly noteService: NoteService) {}
 
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: 30000,
+    },
+  })
   @Get()
   async getAll(): Promise<NoteDto[]> {
     return await this.noteService.getAllNote();
