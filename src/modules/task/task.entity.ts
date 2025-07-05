@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../user/user.entity';
+import { TaskPriority } from './task.enum';
 
 @Entity('task')
 export class Task {
@@ -18,6 +19,16 @@ export class Task {
 
   @Column({ length: 1000 })
   content: string;
+
+  @Column({
+    type: 'enum',
+    enum: TaskPriority,
+    default: TaskPriority.LOW,
+  })
+  priority: TaskPriority;
+
+  @Column()
+  file: string;
 
   @CreateDateColumn()
   createdAt: Date;

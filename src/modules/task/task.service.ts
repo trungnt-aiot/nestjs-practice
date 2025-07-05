@@ -79,6 +79,7 @@ export class TaskService {
   async create(
     taskCreateDto: TaskCreateDto,
     userId: string,
+    file: Express.Multer.File,
   ): Promise<{ message: string }> {
     const start = Date.now();
     this.logger.log(
@@ -88,6 +89,10 @@ export class TaskService {
       await this.taskQueue.add('after_create_task', {
         taskCreateDto,
         userId,
+        file: {
+          ...file,
+          buffer: file.buffer.toString('base64'),
+        },
       });
 
       const duration = Date.now() - start;

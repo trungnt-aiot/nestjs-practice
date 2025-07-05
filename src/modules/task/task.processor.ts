@@ -7,6 +7,8 @@ import { Task } from './task.entity';
 import { User } from '../user/user.entity';
 import { BadRequestException, Inject, LoggerService } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { join } from 'path';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 
 @Processor('task')
 export class TaskProcessor extends WorkerHost {
@@ -29,18 +31,43 @@ export class TaskProcessor extends WorkerHost {
         const {
           taskCreateDto,
           userId,
-        }: { taskCreateDto: TaskCreateDto; userId: string } = job.data;
-
-        const newTask = this.taskRepository.create(taskCreateDto);
-        newTask.user = { id: userId } as User;
-
-        const savedTask: Task = await this.taskRepository.save(newTask);
-
+          file,
+        }: {
+          taskCreateDto: TaskCreateDto;
+          userId: string;
+          file: { buffer: string; originalname: string };
+        } = job.data;
         this.logger.log(
-          `[TaskProcessor] Created task ${savedTask.id} for user ${userId}`,
+          `[TaskProcessor] Created task ${taskCreateDto.tittle} for user ${userId}`,
+        );
+
+        console.log('__dirname:', __dirname);
+        console.log('process.cwd():', process.cwd());
+        console.log('Full path to uploads:', join(__dirname, 'uploads'));
+        console.log(
+          'Full path (cwd) to uploads:',
+          join(process.cwd(), 'uploads'),
         );
 
         await new Promise((res) => setTimeout(res, 10000));
+
+        const filename = `${Date.now()}-${file.originalname}`;
+
+        const uploadDir = join(process.cwd(), 'uploads');
+        if (!existsSync(uploadDir)) {
+          mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const filePath = join(uploadDir, filename);
+
+        const buffer = Buffer.from(file.buffer, 'base64');
+        writeFileSync(filePath, buffer);
+
+        const newTask = this.taskRepository.create(taskCreateDto);
+        newTask.user = { id: userId } as User;
+        newTask.file = filename;
+
+        const savedTask: Task = await this.taskRepository.save(newTask);
 
         const duration = Date.now() - start;
         this.logger.log(

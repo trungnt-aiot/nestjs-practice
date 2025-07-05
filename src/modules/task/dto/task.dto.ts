@@ -1,5 +1,6 @@
-import { IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsString, IsUUID } from 'class-validator';
 import { Task } from '../task.entity';
+import { TaskPriority } from '../task.enum';
 
 export class TaskDto {
   @IsUUID()
@@ -10,6 +11,12 @@ export class TaskDto {
 
   @IsString()
   content: string;
+
+  @IsEnum(TaskPriority)
+  priority: TaskPriority;
+
+  @IsString()
+  file: string;
 
   @IsUUID()
   userId: string;

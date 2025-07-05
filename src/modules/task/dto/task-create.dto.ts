@@ -1,4 +1,5 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsEnum, IsString, MinLength } from 'class-validator';
+import { TaskPriority } from '../task.enum';
 
 export class TaskCreateDto {
   @IsString()
@@ -12,4 +13,9 @@ export class TaskCreateDto {
     message: 'content cannot shorten than 20 characters',
   })
   content: string;
+
+  @IsEnum(TaskPriority, {
+    message: 'Priority of Task is invalid',
+  })
+  priority: TaskPriority;
 }

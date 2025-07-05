@@ -11,13 +11,19 @@ import {
   Patch,
   Post,
   Req,
+  UnauthorizedException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/auth.guard';
 import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
 import { TaskUpdateDto } from './dto/task-update.dto';
 import { Throttle } from '@nestjs/throttler';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { fileUploadMemoryOptions } from './utils/task.upload';
+import { FileVerifyInterceptor } from './interceptor/task.upload.interceptor';
 
 @Controller('task')
 export class TaskController {
@@ -44,13 +50,21 @@ export class TaskController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
+  @UseInterceptors(
+    FileInterceptor('file', fileUploadMemoryOptions),
+    FileVerifyInterceptor,
+  )
   async create(
     @Body(new ValidationPipe()) taskCreateDto: TaskCreateDto,
     @Req() req: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<{ message: string }> {
-    const userId: string = req.user.id;
+    const userId: string = req?.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Not found userId');
+    }
 
-    return await this.taskService.create(taskCreateDto, userId);
+    return await this.taskService.create(taskCreateDto, userId, file);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -62,7 +76,7 @@ export class TaskController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch()
+  @Patch('/:id')
   async update(
     @Param(new UuidValidationPipe()) taskId: string,
     @Body(new ValidationPipe()) taskUpdateDto: TaskUpdateDto,
