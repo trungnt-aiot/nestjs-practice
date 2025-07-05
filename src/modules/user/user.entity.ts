@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { Note } from '../note/note.entity';
+import { Task } from '../task/task.entity';
 
 @Entity('users')
 export class User {
@@ -28,6 +28,6 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Note, (note) => note.user)
-  notes: Note[];
+  @OneToMany(() => Task, (task) => task.user)
+  task: Task[];
 }
