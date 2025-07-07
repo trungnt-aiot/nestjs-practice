@@ -77,10 +77,16 @@ export class TaskController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('/:id')
+  @UseInterceptors(
+    FileInterceptor('file', fileUploadMemoryOptions),
+    FileVerifyInterceptor,
+  )
   async update(
-    @Param(new UuidValidationPipe()) taskId: string,
+    @Param('id', new UuidValidationPipe()) taskId: string,
     @Body(new ValidationPipe()) taskUpdateDto: TaskUpdateDto,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<TaskDto> {
-    return await this.taskService.update(taskUpdateDto, taskId);
+    console.log(taskUpdateDto);
+    return await this.taskService.update(taskUpdateDto, taskId, file);
   }
 }
