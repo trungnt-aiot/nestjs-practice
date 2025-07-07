@@ -131,11 +131,16 @@ export class TaskService {
     }
   }
 
-  async update(taskUpdateDto: TaskUpdateDto, taskId: string): Promise<TaskDto> {
+  async update(
+    taskUpdateDto: TaskUpdateDto,
+    taskId: string,
+    file?: Express.Multer.File,
+  ): Promise<TaskDto> {
     const start = Date.now();
     this.logger.log(
       `[updateTask] START: ${taskId} ${new Date().toISOString()}`,
     );
+
     try {
       const task: Task | null = await this.taskRepository.findOne({
         where: { id: taskId },
@@ -147,10 +152,27 @@ export class TaskService {
         throw new BadRequestException("Task doesn't exist, cannot update");
       }
 
+      if (file) {
+        const fileName = `${taskId}-${Date.now()}-${file.originalname}`;
+        const fs = await import('fs');
+        const path = await import('path');
+
+        const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+
+        fs.writeFileSync(uploadPath, file.buffer);
+        taskUpdateDto.file = fileName;
+        console.log(taskUpdateDto);
+      }
+
       await this.taskRepository.update(taskId, taskUpdateDto);
+
       const duration = Date.now() - start;
       this.logger.log(`[updateTask] SUCCESS: ${taskId} - ${duration}ms`);
-      return TaskDto.fromEntity(task);
+
+      return TaskDto.fromEntity({
+        ...task,
+        ...taskUpdateDto,
+      } as Task);
     } catch (err) {
       const duration = Date.now() - start;
       this.logger.error(
